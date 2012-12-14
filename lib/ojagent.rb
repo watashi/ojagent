@@ -1,5 +1,7 @@
 require "ojagent/version"
+require 'ojagent/ojagent.rb'
+require 'ojagent/cli_agent.rb'
 
-module Ojagent
+module OJAgent
   # Your code goes here...
 end
