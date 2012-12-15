@@ -8,12 +8,14 @@ module OJAgent
 
     def_delegators :agent, :submit
 
-    attr :retries, :duration
+    attr_accessor :retries, :duration
 
     attr_reader :agent, :base_uri, :languages
 
     def initialize(base_uri, languages)
       @agent = Mechanize.new
+      @agent.open_timeout = 20
+      @agent.read_timeout = 60
       @base_uri = base_uri
       @languages = languages
       @retries = 10
