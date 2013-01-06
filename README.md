@@ -1,6 +1,7 @@
 # OJAgent
 
-Agent/Bot/Proxy for Online Judges.
+OJAgent is a client to submit solutions and query status at different online
+judges. It provides a uniformed interface to a lot of famous online judges.
 
 ## Installation
 

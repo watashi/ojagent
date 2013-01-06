@@ -9,9 +9,9 @@ Gem::Specification.new do |gem|
   gem.authors       = ["Zejun Wu"]
   gem.email         = ["zejun.wu@gmail.com"]
   gem.description   = <<-EOF
-OJAgent is a client to submit and query status at different online judges.
-It provides a uniformed interface to a lot of famous online judges.
-EOF
+OJAgent is a client to submit solutions and query status at different online
+judges. It provides a uniformed interface to a lot of famous online judges.
+  EOF
   gem.summary       = %q{Agent/Bot/Proxy for Online Judges.}
   gem.homepage      = "https://github.com/watashi/ojagent"
 
