@@ -19,4 +19,7 @@ EOF
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
+
+  gem.add_dependency 'mechanize', '~> 2.5.1'
+  gem.add_dependency 'nokogiri',  '~> 1.5.5'
 end
