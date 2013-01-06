@@ -3,6 +3,12 @@ require 'mechanize'
 require 'nokogiri'
 
 module OJAgent
+  class LoginFailureError < RuntimeError
+  end
+
+  class OperationFailureError < RuntimeError
+  end
+
   class OJAgent
     extend Forwardable
 
@@ -55,7 +61,7 @@ module OJAgent
         rescue
         end
       end
-      throw "Fail to submit"
+      raise OperationFailure, "Fail to submit"
     end
 
     def status!(id, retries = nil, duration = nil)
@@ -76,7 +82,7 @@ module OJAgent
         sleep duration
       end
       return ret if ret
-      throw "Fail to get status"
+      raise OperationFailure, "Fail to get status"
     end
   end
 end
