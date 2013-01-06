@@ -12,8 +12,8 @@ require 'highline'
 ME = 'quicksubmit'
 
 Agents = {
-  'livearchive' => OJAgent::LiveArchiveAgent,
-  'timus'       => OJAgent::OJAgent
+  :livearchive => OJAgent::LiveArchiveAgent,
+  :timus       => OJAgent::TimusAgent
 }
 
 Ext2Lang = {
@@ -31,7 +31,8 @@ def to_comment(status, lang)
     open, close, inline = '/*', '*/', nil
   end
 
-  ios = StringIO.new("\n", 'w')
+  ios = StringIO.new('', 'w')
+  ios.puts
   ios.puts open if open
   status.each do |k, v|
     ios.puts "#{k} => #{v}"
@@ -41,24 +42,35 @@ def to_comment(status, lang)
 end
 
 # opts
-opts = Slop.parse :strict => true, :help => true do
+opts = Slop.new :strict => true, :help => true do
   banner <<-BANNER
-#{ME} -j judge [options] [-s src]
-#{ME} -j judge [options] [files ...]
-#{ME} -j judge [options] -i pid [-e lang] file
-#{ME} -l
+  #{ME} -j judge [options] [-s src]
+  #{ME} -j judge [options] [files ...]
+  #{ME} -j judge [options] -i pid [-e lang] file
+  #{ME} -l
   BANNER
-  on :l, :list,         'List all available online judges.'
-  on :j, :judge=,       'The remote online judge name, required.'
-  on :s, :source=,      'The directory of files to processe.'
-  on :t, :destination=, 'The directory for storing processed files.'
-  on :r, :retries=,     'The number of retries for each operation.'
-  on :d, :duration=,    'The time to wait before each retry.'
-  on :b, :break=,       'The break between submissions.'
-  on :u, :user=,        'Override $OJ_USERNAME, usually required.'
-  on :p, :pass=,        'Override $OJ_PASSWORD, prompt to ask when required.'
-  on :i, :pid=,         'Problem id, extract from filename when omitted.'
-  on :e, :lang=,        'Program language, extract from extension when omitted.'
+
+  on :l, :list,      'List all available online judges.'
+  on :j, :judge=,    'The remote online judge name, required.',
+    :default => ENV['OJ_JUDGE'], :required => ENV['OJ_JUDGE'].nil?, :as => :symbol
+  on :s, :source=,   'The directory of files to processe.'
+  on :t, :dest=,     'The directory for storing processed files.'
+  on :r, :retries=,  'The number of retries for each operation.',   :as => :integer
+  on :d, :duration=, 'The time to wait before each retry.',         :as => :float
+  on :b, :break=,    'The break between submissions.',              :as => :float
+  on :u, :user=,     'Override $OJ_USERNAME, usually required.',
+    :default => ENV['OJ_USERNAME'], :required => ENV['OJ_USERNAME'].nil?
+  on :p, :pass=,     'Override $OJ_PASSWORD, prompt to ask when required.',
+    :default => ENV['OJ_PASSWORD']
+  on :i, :pid=,      'Problem id, extract from filename when omitted.'
+  on :e, :lang=,     'Program language, extract from extension when omitted.',
+    :as => :symbol
+end
+
+begin
+  opts.parse!
+rescue Slop::Error
+  raise unless opts[:help] || opts[:list]
 end
 
 # help
@@ -74,19 +86,23 @@ end
 
 # init
 judge = opts[:judge]
-OJ = Agents[judge].new
+if Agents[judge].nil?
+  raise Slop::InvalidArgumentError, "#{judge} is not a supported judge"
+else
+  OJ = Agents[judge].new
+end
 
 OJ.retries = opts[:retries] if opts[:retries]
 OJ.duration = opts[:duration] if opts[:duration]
 
-user = opts[:user] || ENV['OJ_USERNAME']
-pass = opts[:pass] || ENV['OJ_PASSWORD'] ||
-  HighLine.new.ask("#{user}@#{judge}'s password: ") {|q| q.echo = false }
+user = opts[:user]
+pass = opts[:pass] ||
+  HighLine.new.ask("#{user}@#{judge}'s password: "){|q| q.echo = false}
 OJ.login(user, pass)
 
-DESTINATION = opts[:destination] || '.'
+DESTINATION = opts[:dest] || '.'
 
-BREAK = opts[:break] ? opts[:break].to_f : 10
+BREAK = opts[:break] ? opts[:break] : 10
 
 LOG = Logger.new($stderr)
 
@@ -95,14 +111,14 @@ if opts[:source] || $*.empty?
   Find.find(opts[:source] || '.') do |path|
     $* << path if File.file?(path)
   end
-else
+end
 
 $*.uniq.each do |path|
   base = File.basename(path)
   pid = opts[:pid] || base[/^\d{4}/]
 
   ext = File.extname(path)
-  lang = opts[:lang].to_sym || Ext2Lang[ext]
+  lang = opts[:lang] || Ext2Lang[ext]
 
   if pid && lang
     LOG.info "PROCESS #{path}"
@@ -119,8 +135,8 @@ $*.uniq.each do |path|
 
     FileUtils.mkdir_p(DESTINATION)
     path = "#{DESTINATION}/#{base}"
-    path.sub!(/#{ext}$/, "#{Time.now.to_i}.#{ext}") if File.exists? path
-    IO.write(path, code)
+    path.sub!(/#{ext}$/, ".#{Time.now.to_i}#{ext}") if File.exists? path
+      IO.write(path, code)
 
     LOG.add status[:status] =~ /accepted/i ? Logger::INFO : Logger::WARN, status
   rescue Exception => ex

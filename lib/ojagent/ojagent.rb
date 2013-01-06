@@ -61,7 +61,7 @@ module OJAgent
         rescue
         end
       end
-      raise OperationFailure, "Fail to submit"
+      raise OperationFailureError, "Fail to submit"
     end
 
     def status!(id, retries = nil, duration = nil)
@@ -82,7 +82,7 @@ module OJAgent
         sleep duration
       end
       return ret if ret
-      raise OperationFailure, "Fail to get status"
+      raise OperationFailureError, "Fail to get status"
     end
   end
 end
