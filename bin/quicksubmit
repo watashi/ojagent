@@ -1,0 +1,131 @@
+#!/usr/bin/ruby
+
+require 'ojagent'
+
+require 'find'
+require 'logger'
+require 'stringio'
+
+require 'slop'
+require 'highline'
+
+ME = 'quicksubmit'
+
+Agents = {
+  'livearchive' => OJAgent::LiveArchiveAgent,
+  'timus'       => OJAgent::OJAgent
+}
+
+Ext2Lang = {
+  '.pas'  => :pascal,
+  '.c'    => :c,
+  '.cs'   => :cs,
+  '.cpp'  => :cpp,
+  '.java' => :java
+}
+
+def to_comment(status, lang)
+  if lang == :pascal
+    open, close, inline = '{', '}', nil
+  else
+    open, close, inline = '/*', '*/', nil
+  end
+
+  ios = StringIO.new("\n", 'w')
+  ios.puts open if open
+  status.each do |k, v|
+    ios.puts "#{k} => #{v}"
+  end
+  ios.puts close if close
+  ios.string
+end
+
+# opts
+opts = Slop.parse :strict => true, :help => true do
+  banner <<-BANNER
+#{ME} -j judge [options] [-s src]
+#{ME} -j judge [options] [files ...]
+#{ME} -j judge [options] -i pid [-e lang] file
+#{ME} -l
+  BANNER
+  on :l, :list,         'List all available online judges.'
+  on :j, :judge=,       'The remote online judge name, required.'
+  on :s, :source=,      'The directory of files to processe.'
+  on :t, :destination=, 'The directory for storing processed files.'
+  on :r, :retries=,     'The number of retries for each operation.'
+  on :d, :duration=,    'The time to wait before each retry.'
+  on :b, :break=,       'The break between submissions.'
+  on :u, :user=,        'Override $OJ_USERNAME, usually required.'
+  on :p, :pass=,        'Override $OJ_PASSWORD, prompt to ask when required.'
+  on :i, :pid=,         'Problem id, extract from filename when omitted.'
+  on :e, :lang=,        'Program language, extract from extension when omitted.'
+end
+
+# help
+exit 0 if opts[:help]
+
+# list
+if opts[:list]
+  Agents.to_a.sort.each do |name, agent|
+    puts '%-12s %s' % [name, agent.new.base_uri]
+  end
+  exit 0
+end
+
+# init
+judge = opts[:judge]
+OJ = Agents[judge].new
+
+OJ.retries = opts[:retries] if opts[:retries]
+OJ.duration = opts[:duration] if opts[:duration]
+
+user = opts[:user] || ENV['OJ_USERNAME']
+pass = opts[:pass] || ENV['OJ_PASSWORD'] ||
+  HighLine.new.ask("#{user}@#{judge}'s password: ") {|q| q.echo = false }
+OJ.login(user, pass)
+
+DESTINATION = opts[:destination] || '.'
+
+BREAK = opts[:break] ? opts[:break].to_f : 10
+
+LOG = Logger.new($stderr)
+
+# main
+if opts[:source] || $*.empty?
+  Find.find(opts[:source] || '.') do |path|
+    $* << path if File.file?(path)
+  end
+else
+
+$*.uniq.each do |path|
+  base = File.basename(path)
+  pid = opts[:pid] || base[/^\d{4}/]
+
+  ext = File.extname(path)
+  lang = opts[:lang].to_sym || Ext2Lang[ext]
+
+  if pid && lang
+    LOG.info "PROCESS #{path}"
+  else
+    LOG.warn "IGNORE #{path}"
+    next
+  end
+
+  begin
+    code = IO.read(path)
+    id = OJ.submit! pid, code, lang
+    status = OJ.status! id
+    code += to_comment(status, lang)
+
+    FileUtils.mkdir_p(DESTINATION)
+    path = "#{DESTINATION}/#{base}"
+    path.sub!(/#{ext}$/, "#{Time.now.to_i}.#{ext}") if File.exists? path
+    IO.write(path, code)
+
+    LOG.add status[:status] =~ /accepted/i ? Logger::INFO : Logger::WARN, status
+  rescue Exception => ex
+    LOG.error ex
+  end
+
+  sleep BREAK
+end

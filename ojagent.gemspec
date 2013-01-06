@@ -22,4 +22,6 @@ EOF
 
   gem.add_dependency 'mechanize', '~> 2.5.1'
   gem.add_dependency 'nokogiri',  '~> 1.5.5'
+  gem.add_dependency 'slop',      '~> 3.3.3'
+  gem.add_dependency 'highline',  '~> 1.6.15'
 end
