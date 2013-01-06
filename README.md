@@ -18,7 +18,28 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+OJ Agent:
+
+    require 'ojagent'
+
+    oj = OJAgent::AnyAnget.new
+    oj.login($user, $pass)
+    oj.submit!($pid, $code, $lang)
+    p oj.status!
+
+Quick Submit:
+
+    $ quicksubmit -j pat -u admin -i 1001 -s pat/1001/ -t pat/1001/test/
+    $ export OJ_JUDGE=zoj
+    $ export OJ_USERNAME=watashi
+    $ export OJ_PASSWORD=*******
+    $ quicksubmit 1001.c
+
+For more information:
+
+    $ quicksubmit -h
+    $ quicksubmit -l
+    $ ri OJAgent
 
 ## Contributing
 
