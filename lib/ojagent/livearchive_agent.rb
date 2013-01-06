@@ -1,5 +1,5 @@
 module OJAgent
-  class CLIAgent < OJAgent
+  class LiveArchiveAgent < OJAgent
     def initialize
       super 'http://icpcarchive.ecs.baylor.edu',
         :c      => '1',
