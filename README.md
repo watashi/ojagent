@@ -1,6 +1,6 @@
 # OJAgent
 
-TODO: Write a gem description
+Agent/Bot/Proxy for Online Judges.
 
 ## Installation
 
