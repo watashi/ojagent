@@ -1,3 +1,3 @@
-module Ojagent
+module OJAgent
   VERSION = "0.0.1"
 end
