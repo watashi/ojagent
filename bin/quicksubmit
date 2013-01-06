@@ -44,10 +44,10 @@ end
 # opts
 opts = Slop.new :strict => true, :help => true do
   banner <<-BANNER
-  #{ME} -j judge [options] [-s src]
-  #{ME} -j judge [options] [files ...]
-  #{ME} -j judge [options] -i pid [-e lang] file
-  #{ME} -l
+#{ME} -j judge [options] [-s src]
+#{ME} -j judge [options] [files ...]
+#{ME} -j judge [options] -i pid [-e lang] file
+#{ME} -l
   BANNER
 
   on :l, :list,      'List all available online judges.'
@@ -136,7 +136,7 @@ $*.uniq.each do |path|
     FileUtils.mkdir_p(DESTINATION)
     path = "#{DESTINATION}/#{base}"
     path.sub!(/#{ext}$/, ".#{Time.now.to_i}#{ext}") if File.exists? path
-      IO.write(path, code)
+    IO.write(path, code)
 
     LOG.add status[:status] =~ /accepted/i ? Logger::INFO : Logger::WARN, status
   rescue Exception => ex
