@@ -1,7 +1,5 @@
 module OJAgent
   class HDOJAgent < OJAgent
-    attr_reader :user
-
     def initialize
       super 'http://acm.hdu.edu.cn',
         :cpp    => 0,
@@ -21,9 +19,6 @@ module OJAgent
       login_form.submit
     end
 
-    def logout
-    end
-
     def submit(pid, code, lang)
       page = get '/submit.php'
       submit_form = page.form_with :action => './submit.php?action=submit'
@@ -31,25 +26,16 @@ module OJAgent
                              :language   => languages[lang],
                              :usercode   => code
       submit_form.submit
-      [user, pid]
+      pid.to_s
     end
 
-    def status(id)
-      user, pid = *id
-      page = get '/status.php?user=' + user
-      status = (page / '#fixed_table table.table_text tr').
-        map{|tr| tr / 'td'}.
-        find{|td| td[3] && td[3].inner_text == pid.to_s}
+    @@selector = '#fixed_table table.table_text tr'
+    @@thead = [:id, :date, :status, :pid, :time, :mem, :length, :lang, :user]
 
-      return nil unless status
-      ret = {}
-      ths = [:id, :date, :status, :pid, :time, :mem, :length, :lang, :user]
-      ths.each_with_index do |k, i|
-        ret[k] = status[i].inner_text.strip.gsub('\s+', ' ')
+    def status(pid)
+      parse_status '/status.php?user=' + user, @@selector, @@thead do |tr|
+        tr[3] && tr[3].inner_text == pid
       end
-      url = status[3] / 'a[href]'
-      ret[:url] = url.map{|a| a['href']} unless url.empty?
-      ret
     end
   end
 end

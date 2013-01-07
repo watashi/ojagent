@@ -16,7 +16,7 @@ module OJAgent
 
     attr_accessor :retries, :duration
 
-    attr_reader :agent, :base_uri, :languages
+    attr_reader :agent, :base_uri, :languages, :user
 
     def initialize(base_uri = nil, languages = {})
       @agent = Mechanize.new
@@ -52,6 +52,27 @@ module OJAgent
       raise NotImplementedError
     end
 
+    def parse_status(url, selector, thead, &block)
+      tbody = get(url) / selector
+      tr = tbody.map{|tr| tr / 'td'}.find{|tr| yield tr}
+      return nil unless tr
+
+      ret = {}
+      thead.zip(tr) do |th, td|
+        next unless th && td
+        ret[th] = td.inner_text.strip.gsub('\s+', ' ')
+        if th == :status
+          url = td / 'a[href]'
+          if url.size > 0
+            ret[:url] = (ret[:url] || []) + url.map{|a| a['href']}
+          end
+        end
+      end
+      ret
+    end
+
+    # Submit solution and retry on failure. The return value is a hint for
+    # getting status and varys at different online judges.
     def submit!(pid, code, lang, retries = nil)
       retries ||= self.retries
       retries.times do
@@ -64,6 +85,7 @@ module OJAgent
       raise OperationFailureError, "Fail to submit"
     end
 
+    # Get status and retry on failure.
     def status!(id, retries = nil, duration = nil)
       retries ||= self.retries
       duration ||= self.duration
@@ -83,6 +105,12 @@ module OJAgent
       end
       return ret if ret
       raise OperationFailureError, "Fail to get status"
+    end
+
+    # Submit solution and get the corresponding status.
+    def judge!(pid, code, lang, retries = nil, duration = nil)
+      id = submit!(pid, code, lang, retries)
+      status!(id, retries, duration)
     end
   end
 end

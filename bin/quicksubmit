@@ -16,7 +16,7 @@ OJAgent.all.each do |agent|
   name = agent.name.downcase
   name.sub!(/.*::/, '')
   name.sub!(/agent$/, '')
-  Agents[name] = agent
+  Agents[name.to_sym] = agent
 end
 
 Ext2Lang = {

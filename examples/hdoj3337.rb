@@ -3,8 +3,8 @@
 require 'ojagent'
 
 # Change these two lines
-USER = 'ojagent'
-PASS = 'ppnn13%dkstFeb.1st'
+USER = ENV['OJ_USERNAME'] || 'ojagent'
+PASS = ENV['OJ_PASSWORD'] || 'ppnn13%dkstFeb.1st'
 
 HDOJ = OJAgent::HDOJAgent.new
 HDOJ.login USER, PASS

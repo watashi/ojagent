@@ -9,15 +9,13 @@ module OJAgent
     end
 
     def login(user, pass)
+      @user = user
       page = get '/'
       login_form = page.form_with :id => 'mod_loginform'
       login_form.set_fields :username => user,
                             :passwd   => pass
       login_form.checkbox_with(:name => 'remember').check
       result = login_form.submit
-    end
-
-    def logout
     end
 
     def submit(pid, code, lang)
@@ -38,25 +36,14 @@ module OJAgent
       end
     end
 
-    def status(id)
-      page = get '/index.php?option=com_onlinejudge&Itemid=9'
-      status = (page / '.maincontent table tr').
-        map{|tr| tr / 'td'}.
-        find{|td| !td.empty? && td[0].inner_text == id}
+    @@selector = '.maincontent table tr'
+    @@thead = [:id, :pid, :pname, :status, :lang, :time, :data]
 
-      return nil unless status
-      ret = {
-        :id     => status[0].inner_text,
-        :pid    => status[1].inner_text,
-        :pname  => status[2].inner_text,
-        :status => status[3].inner_text.strip,
-        :lang   => status[4].inner_text,
-        :time   => status[5].inner_text,
-        :date   => status[6].inner_text
-      }
-      url = status[3] / 'a[href]'
-      ret[:url] = url.map{|a| a['href']} unless url.empty?
-      ret
+    def status(id)
+      url = '/index.php?option=com_onlinejudge&Itemid=9'
+      parse_status url, @@selector, @@thead do |tr|
+        !tr.empty? && tr[0].inner_text == id
+      end
     end
   end
 end
