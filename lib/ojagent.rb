@@ -1,10 +1,17 @@
 require 'ojagent/version'
 require 'ojagent/ojagent.rb'
 
-require 'ojagent/hdoj_agent.rb'
-require 'ojagent/livearchive_agent.rb'
-require 'ojagent/timus_agent.rb'
+libdir = File.join(File.expand_path(File.dirname(__FILE__)), 'ojagent')
+Dir.entries(libdir).each do |filename|
+  require File.join(libdir, filename) if filename.end_with? '_agent.rb'
+end
 
 module OJAgent
-  # Your code goes here...
+  # Return all avialbe agents.
+  def self.all
+    ObjectSpace.each_object(Class).select{|agent| agent < OJAgent}
+  end
+
+  # All avialbe agents at initial time.
+  StandardAgents = all
 end

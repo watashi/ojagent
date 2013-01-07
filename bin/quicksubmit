@@ -11,10 +11,13 @@ require 'highline'
 
 ME = 'quicksubmit'
 
-Agents = {
-  :livearchive => OJAgent::LiveArchiveAgent,
-  :timus       => OJAgent::TimusAgent
-}
+Agents = {}
+OJAgent.all.each do |agent|
+  name = agent.name.downcase
+  name.sub!(/.*::/, '')
+  name.sub!(/agent$/, '')
+  Agents[name] = agent
+end
 
 Ext2Lang = {
   '.pas'  => :pascal,

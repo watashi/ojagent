@@ -18,7 +18,7 @@ module OJAgent
 
     attr_reader :agent, :base_uri, :languages
 
-    def initialize(base_uri, languages)
+    def initialize(base_uri = nil, languages = {})
       @agent = Mechanize.new
       @agent.open_timeout = 20
       @agent.read_timeout = 60
