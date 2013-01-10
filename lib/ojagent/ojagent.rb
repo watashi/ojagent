@@ -2,6 +2,14 @@ require 'forwardable'
 require 'mechanize'
 require 'nokogiri'
 
+class Mechanize::Form::FileUpload
+  def file=(file, default_name = 'noname')
+    data, name = *file
+    self.file_data = data
+    self.file_name = name || default_name
+  end
+end
+
 module OJAgent
   class LoginFailureError < RuntimeError
   end
@@ -44,6 +52,10 @@ module OJAgent
       raise NotImplementedError
     end
 
+    def open(pid)
+      # noop
+    end
+
     def submit(pid, code, lang)
       raise NotImplementedError
     end
@@ -60,7 +72,7 @@ module OJAgent
       ret = {}
       thead.zip(tr) do |th, td|
         next unless th && td
-        ret[th] = td.inner_text.strip.gsub('\s+', ' ')
+        ret[th] = td.inner_text.strip.gsub(/\s+/, ' ')
         if th == :status
           url = td / 'a[href]'
           if url.size > 0
@@ -69,6 +81,22 @@ module OJAgent
         end
       end
       ret
+    end
+
+    # Open the problem or download the input. For online judges that ask
+    # users to download the input and upload the output in time limit,
+    # user must open (download the input) before submit (upload the output).
+    # For other online judges, it does nothing.
+    def open!(pid, retries = 1)
+      retries ||= self.retries
+      retries.times do
+        begin
+          ret = open pid
+          return ret if ret
+        rescue
+        end
+      end
+      raise OperationFailureError, "Fail to open"
     end
 
     # Submit solution and retry on failure. The return value is a hint for

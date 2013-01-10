@@ -141,7 +141,8 @@ $*.uniq.each do |path|
     path.sub!(/#{ext}$/, ".#{Time.now.to_i}#{ext}") if File.exists? path
     IO.write(path, code)
 
-    LOG.add status[:status] =~ /accepted/i ? Logger::INFO : Logger::WARN, status
+    level = status[:status] =~ /correct|accepted/i ? Logger::INFO : Logger::WARN
+    LOG.add level, status
   rescue Exception => ex
     LOG.error ex
   end
